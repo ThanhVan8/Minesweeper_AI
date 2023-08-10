@@ -2,8 +2,8 @@ from pysat.formula import CNF
 from pysat.solvers import Solver
 # Khởi tạo một công thức CNF trống
 import numpy as np
-cnf = CNF(from_clauses=[])
-
+# cnf = CNF(from_clauses=[])
+cnf = CNF()
 
 mine = [[2,0,0],
         [0,2,0],
@@ -81,33 +81,32 @@ for i in range(len(mine)):
             for index in pos:
                 #print(index)
                 if index not in cnf.clauses:
-                    cnf.extend(index)   
+                    cnf.append(index)   
             for index in neg:
                 #print(index)
                 if index not in cnf.clauses:
-                    cnf.extend(index)
+                    cnf.append(index)
             nei_list = []
             pos = []
             neg = []
             #print() 
 cnf.clauses.remove([])              
-for clause in cnf.clauses:
-    print(clause)
+# for clause in cnf.clauses:
+#     print(clause)
+print(cnf.clauses)
     
-
-
-with Solver(bootstrap_with=cnf) as solver:
+with Solver(bootstrap_with=cnf.clauses) as solver:
     # 1.1 call the solver for this formula:
     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
 
     # 1.2 the formula is satisfiable and so has a model:
     print('and the model is:', solver.get_model())
 
-    # 2.1 apply the MiniSat-like assumption interface:
-    print('formula is',
-        f'{"s" if solver.solve(assumptions=[1, 2]) else "uns"}atisfiable',
-        'assuming x1 and x2')
+    # # 2.1 apply the MiniSat-like assumption interface:
+    # print('formula is',
+    #     f'{"s" if solver.solve(assumptions=[1, 2]) else "uns"}atisfiable',
+    #     'assuming x1 and x2')
 
-    # 2.2 the formula is unsatisfiable,
-    # i.e. an unsatisfiable core can be extracted:
-    print('and the unsatisfiable core is:', solver.get_core())
+    # # 2.2 the formula is unsatisfiable,
+    # # i.e. an unsatisfiable core can be extracted:
+    # print('and the unsatisfiable core is:', solver.get_core())
