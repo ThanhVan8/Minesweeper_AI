@@ -1,8 +1,7 @@
 from pysat.formula import CNF
 from pysat.solvers import Solver
-# Khởi tạo một công thức CNF trống
 import numpy as np
-cnf = CNF(from_clauses=[])
+cnf = CNF()
 
 
 mine = [[2,0,0],
@@ -13,7 +12,6 @@ mine=np.array(mine)
 
 def NewMatrix(mine):
     n = len(mine)
-    print(n)
     index_matrix = np.array(mine) 
     for i in range(n):
         for j in range(n): 
@@ -45,57 +43,76 @@ def combinations_negative(ValueList, k):
         result.append([-first] + combo)  # Đổi dấu cho phần tử đầu tiên
     result.extend(combinations_negative(rest, k))
     return result
-#def CreateNeighbors(IndexPosition):
+
+NumMatrix = NewMatrix(mine)
+
+def is_integer_list(lst):
+    if not isinstance(lst, list):
+        return False
+    
+    for item in lst:
+        if not isinstance(item, int):
+            return False
+    
+    return True
+def convert_to_integer_list(clauses):
+    integer_clauses = []
+    
+    for clause in clauses:
+        integer_clause = [int(literal) for literal in clause]
+        integer_clauses.append(integer_clause)
+    
+    return integer_clauses
+def CreateCNF(InitMatrix, NumMatrix, cnf):
+    pos = []
+    neg = []
+    neighbor_list = []
+    for i in range(len(InitMatrix)):
+        for j in range(len(InitMatrix[i])):
+            if  InitMatrix[i][j] > 0:
+                tmp = InitMatrix[i][j]
+                neighbors = [(i+1, j), 
+                            (i, j+1), 
+                            (i-1, j), 
+                            (i, j-1), 
+                            (i+1, j+1), 
+                            (i+1, j-1), 
+                            (i-1, j+1), 
+                            (i-1, j-1)]
+                for neighbor in neighbors:
+                    #check exist
+                    if(0 <= neighbor[0] < len(InitMatrix)) and (0 <= neighbor[1] < len(InitMatrix[i])):
+                        if(InitMatrix[neighbor[0]][neighbor[1]] == 0):
+                            neighbor_list.append(NumMatrix[neighbor[0]][neighbor[1]])
+
+                #positive num (having bomb)
+                pos = combinations_positive(neighbor_list,len(neighbor_list)-InitMatrix[i][j] + 1)
+                #negative num (not having bomb)
+                if len(neighbor_list) - InitMatrix[i][j] != 1:
+                    neg = combinations_negative(neighbor_list,len(neighbor_list) - InitMatrix[i][j])
+                
+                for clause in pos:
+                    clause = [int(literal) for literal in clause]
+                    if clause not in cnf.clauses:
+                        cnf.append(clause)
+                for clause in neg:
+                    clause = [int(literal) for literal in clause]
+                    if clause not in cnf.clauses:
+                        cnf.append(clause)
+                
+                neighbor_list = []
+                pos = []
+                neg = []
+    cnf.clauses.remove([])  
+    return cnf     
 
 
-cnf_list = []
-IndexMatrix = NewMatrix(mine)
-neighbors =[]
-neighbor_list = list()
-pos = []
-neg = []
-for i in range(len(mine)):
-    for j in range(len(mine[i])):
-        if  mine[i][j] > 0:
-            tmp = mine[i][j]
-            neighbors = [(i+1, j), 
-                        (i, j+1), 
-                        (i-1, j), 
-                        (i, j-1), 
-                        (i+1, j+1), 
-                        (i+1, j-1), 
-                        (i-1, j+1), 
-                        (i-1, j-1),]
-            nei_list = list()
-            for neighbor in neighbors:
-                #check exist
-                if(0 <= neighbor[0] < len(mine)) and (0 <= neighbor[1] < len(mine[i])):
-                    if(mine[neighbor[0]][neighbor[1]] == 0):
-                        nei_list.append(IndexMatrix[neighbor[0]][neighbor[1]])
-
-            pos = combinations_positive(nei_list,len(nei_list)-mine[i][j] + 1)
-            #print(len(nei_list), mine[i][j])   
-            if len(nei_list) - mine[i][j] != 1:
-                neg = combinations_negative(nei_list,len(nei_list) - mine[i][j])
-            
-            for index in pos:
-                #print(index)
-                if index not in cnf.clauses:
-                    cnf.extend(index)   
-            for index in neg:
-                #print(index)
-                if index not in cnf.clauses:
-                    cnf.extend(index)
-            nei_list = []
-            pos = []
-            neg = []
-            #print() 
-cnf.clauses.remove([])              
+    
+CreateCNF(mine, NumMatrix, cnf)       
 for clause in cnf.clauses:
     print(clause)
     
-
-
+    
 with Solver(bootstrap_with=cnf) as solver:
     # 1.1 call the solver for this formula:
     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
