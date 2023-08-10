@@ -4,12 +4,13 @@ import numpy as np
 cnf = CNF()
 
 
-mine = [[2,0,0],
-        [0,2,0],
+mine = [[3,0,0],
+        [0,0,0],
         [0,0,0]]
 
 mine=np.array(mine)
 
+#create number matrix
 def NewMatrix(mine):
     n = len(mine)
     index_matrix = np.array(mine) 
@@ -18,6 +19,7 @@ def NewMatrix(mine):
             index_matrix[i][j] = i*n+j+1
     return index_matrix
 
+#recursion to find bomb clause
 def combinations_positive(ValueList, k):
     if k == 0:
         return [[]]
@@ -31,6 +33,8 @@ def combinations_positive(ValueList, k):
     result.extend(combinations_positive(rest, k))
     return result
 
+
+#recursion to find not bomb clause
 def combinations_negative(ValueList, k):
     if k == 0:
         return [[]]
@@ -39,30 +43,13 @@ def combinations_negative(ValueList, k):
 
     result = []
     first, rest = ValueList[0], ValueList[1:]
+    #recursive with rest digits
     for combo in combinations_negative(rest, k - 1):
-        result.append([-first] + combo)  # Đổi dấu cho phần tử đầu tiên
+        result.append([-first] + combo)  # change opposite
     result.extend(combinations_negative(rest, k))
     return result
 
-NumMatrix = NewMatrix(mine)
 
-def is_integer_list(lst):
-    if not isinstance(lst, list):
-        return False
-    
-    for item in lst:
-        if not isinstance(item, int):
-            return False
-    
-    return True
-def convert_to_integer_list(clauses):
-    integer_clauses = []
-    
-    for clause in clauses:
-        integer_clause = [int(literal) for literal in clause]
-        integer_clauses.append(integer_clause)
-    
-    return integer_clauses
 def CreateCNF(InitMatrix, NumMatrix, cnf):
     pos = []
     neg = []
@@ -70,7 +57,6 @@ def CreateCNF(InitMatrix, NumMatrix, cnf):
     for i in range(len(InitMatrix)):
         for j in range(len(InitMatrix[i])):
             if  InitMatrix[i][j] > 0:
-                tmp = InitMatrix[i][j]
                 neighbors = [(i+1, j), 
                             (i, j+1), 
                             (i-1, j), 
@@ -83,7 +69,7 @@ def CreateCNF(InitMatrix, NumMatrix, cnf):
                     #check exist
                     if(0 <= neighbor[0] < len(InitMatrix)) and (0 <= neighbor[1] < len(InitMatrix[i])):
                         if(InitMatrix[neighbor[0]][neighbor[1]] == 0):
-                            neighbor_list.append(NumMatrix[neighbor[0]][neighbor[1]])
+                            neighbor_list.append(NumMatrix[neighbor[0]][neighbor[1]]) #append neighbor position
 
                 #positive num (having bomb)
                 pos = combinations_positive(neighbor_list,len(neighbor_list)-InitMatrix[i][j] + 1)
@@ -91,27 +77,33 @@ def CreateCNF(InitMatrix, NumMatrix, cnf):
                 if len(neighbor_list) - InitMatrix[i][j] != 1:
                     neg = combinations_negative(neighbor_list,len(neighbor_list) - InitMatrix[i][j])
                 
+                #append bomb clause to CNF
                 for clause in pos:
-                    clause = [int(literal) for literal in clause]
-                    if clause not in cnf.clauses:
+                    clause = [int(literal) for literal in clause] #convert integer list
+                    if clause not in cnf.clauses: #check exist
                         cnf.append(clause)
+                        
+                #append not bomb clause to CNF        
                 for clause in neg:
-                    clause = [int(literal) for literal in clause]
-                    if clause not in cnf.clauses:
+                    clause = [int(literal) for literal in clause] #convert integer list
+                    if clause not in cnf.clauses:#check exist
                         cnf.append(clause)
                 
                 neighbor_list = []
                 pos = []
                 neg = []
-    cnf.clauses.remove([])  
+    #check exist a null list and remove that            
+    if [] in cnf.clauses:
+        cnf.clauses.remove([])
     return cnf     
 
 
-    
+NumMatrix = NewMatrix(mine) #position matrix
 CreateCNF(mine, NumMatrix, cnf)       
+
 for clause in cnf.clauses:
-    print(clause)
-    
+    print (clause)
+
     
 with Solver(bootstrap_with=cnf) as solver:
     # 1.1 call the solver for this formula:
