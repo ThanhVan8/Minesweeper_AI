@@ -4,18 +4,18 @@ import numpy as np
 import heapq
 cnf = CNF()
 
-#mine = [['1','1','1'],
-#        ['-','-','-'],
-#        ['-','2','-']]
+mine = [['0','1','1'],
+        ['-','-','-'],
+       ['-','2','-']]
 
 
 
 
-mine = [['-','1','-','1','-'],
-        ['-','2','1','-','-'],
-        ['3','-','-','2','2'],
-        ['2','-','-','1','-'],
-        ['-','1','1','1','1']]
+#mine = [['-','1','-','1','-'],
+#        ['-','2','1','-','-'],
+#        ['3','-','-','2','2'],
+#        ['2','-','-','1','-'],
+#        ['-','1','1','1','1']]
 
 #recursion to find bomb clause 
 #mine = [['','0','0','0','0','2','-','3','-'],
@@ -175,10 +175,9 @@ def singleVars(cnf):
     return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
 
 
-def CreateSuccessors(ValueMatrix, Simply_List):
-    successors = []
+def CreateInitState(ValueMatrix, Simply_List):
     n = len(ValueMatrix)
-    
+    #use single CNF to create InitState
     for i in Simply_List:
         if i > 0:
             value = i -1
@@ -190,6 +189,13 @@ def CreateSuccessors(ValueMatrix, Simply_List):
             row = value // n
             col = value % n
             ValueMatrix[row][col] = i
+    
+    return ValueMatrix    
+            
+
+def CreateSuccessors(ValueMatrix):
+    successors = []
+    n = len(ValueMatrix)
     #create successors
     for i in range(n):
         for j in range(n):
@@ -199,10 +205,10 @@ def CreateSuccessors(ValueMatrix, Simply_List):
                 successors.append(suc)  
                 
     return successors   
-'''         
+     
 print(ValueMatrix)
 singleCNF = singleVars(cnf)
-tmp = CreateSuccessors(ValueMatrix, singleCNF)
+InitState = CreateInitState(ValueMatrix, singleCNF)
+tmp = CreateSuccessors(InitState)
 for i in tmp:
     print(i)
-'''
