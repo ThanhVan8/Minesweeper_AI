@@ -12,6 +12,10 @@ mine = [['1','1','1'],
 #         ['-','-','-'],
 #         ['-','-','-']]
 
+# mine = [['0','-','-'],
+#         ['1','-','1'],
+#         ['1','-','-']]
+
 mine=np.array(mine)
 
 def combinations_positive(ValueList, k):
@@ -61,13 +65,17 @@ def CreateCNF(InitMatrix, cnf):
         for j in range(len(InitMatrix[i])):
             if  InitMatrix[i][j].isnumeric():
                 neighbor_list = neighbors(InitMatrix, (i, j))
-
-                #positive num (having bomb)
-                pos = combinations_positive(neighbor_list,len(neighbor_list)-int(InitMatrix[i][j]) + 1)
-                #negative num (not having bomb)
-                if len(neighbor_list) - int(InitMatrix[i][j]) != 1:
-                    neg = combinations_negative(neighbor_list,len(neighbor_list) - int(InitMatrix[i][j]))
-                
+                if int(InitMatrix[i][j]) == 0:
+                    neg = combinations_negative(neighbor_list,1)
+                elif int(InitMatrix[i][j]) == len(neighbor_list):
+                    pos = combinations_positive(neighbor_list,1)
+                else:
+                    #positive num (having bomb)
+                    pos = combinations_positive(neighbor_list,len(neighbor_list)-int(InitMatrix[i][j]) + 1)
+                    #negative num (not having bomb)
+                    if len(neighbor_list) - int(InitMatrix[i][j]) != 1:
+                        neg = combinations_negative(neighbor_list,len(neighbor_list) - int(InitMatrix[i][j]))
+                    
                 for clause in pos:
                     clause = [int(literal) for literal in clause]
                     if clause not in cnf.clauses:
@@ -92,9 +100,9 @@ for clause in cnf.clauses:
     
 
 
-with Solver(bootstrap_with=cnf) as solver:
-    # 1.1 call the solver for this formula:
-    print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
+# with Solver(bootstrap_with=cnf) as solver:
+#     # 1.1 call the solver for this formula:
+#     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
 
-    # 1.2 the formula is satisfiable and so has a model:
-    print('and the model is:', solver.get_model())
+#     # 1.2 the formula is satisfiable and so has a model:
+#     print('and the model is:', solver.get_model())
