@@ -2,6 +2,8 @@ from pysat.formula import CNF
 from pysat.solvers import Solver
 import numpy as np
 import heapq
+import random, time, tracemalloc
+
 cnf = CNF()
 
 mine = [['1','1','1'],
@@ -94,18 +96,13 @@ def CreateCNF(InitMatrix, cnf):
                     if clause not in cnf.clauses:
                         cnf.append(clause)
                 
-                # neighbor_list = []
-                # pos = []
-                # neg = []
     if [] in cnf.clauses:
         cnf.clauses.remove([])  
     return cnf     
 
 def checkExist(state, clause):
     for i in clause:
-        # print(i)
         for j in state:
-            # print(j)
             if int(i) in j:
                 return True
     return False
@@ -168,14 +165,11 @@ def CreateInitState(ValueMatrix, Simply_List):
 def CreateSuccessors(InitMatrix):
     
     successors = []
-    index = []
     n = len(InitMatrix)
-    #print(tmp[2][1])
     #create successors
     for i in range(n):
         for j in range(n):
             if checkIfHaveInfo(InitMatrix, (i,j)) == True:
-                #print(tmp)
                 
                 suc1 = [row[:] for row in InitMatrix]
                 suc2 = [row[:] for row in InitMatrix]
@@ -185,17 +179,14 @@ def CreateSuccessors(InitMatrix):
           
                 suc1[i][j] = value1
                 suc2[i][j] = value2
-                #print(InitMatrix)
+                
                 successors.append(suc1)
                 successors.append(suc2)
-                index.append(value1)
-                index.append(value2)
                 
                
-    return successors, index
+    return successors
 
 def AStar(mine):
-    #newmatrix se dc tao tu ma tran ban dau
     singleCNF = singleVars(cnf)
     startstate = CreateInitState(NewMatrix(mine), singleCNF)
     frontier = [(conflict(startstate), conflict(startstate), 0, startstate)]
@@ -206,18 +197,14 @@ def AStar(mine):
             return curState
         
         exploredSet.append(curState)
-        # tmpcurState = list(i for j in curState for i in j)
-        # exploredSet.extend(curState)
-        # exploredSet = np.array([exploredSet])
         
         #xu ly tao successor
-        successor, index = CreateSuccessors(curState)
+        successor = CreateSuccessors(curState)
         
-        for i in range (len(successor)):
-            if successor[i] not in exploredSet:
-                heapq.heappush(frontier, (conflict(successor[i]) + cost + 1, conflict(successor[i]), cost + 1, successor[i]))
+        for i in successor:
+            if i not in exploredSet:
+                heapq.heappush(frontier, (conflict(i) + cost + 1, conflict(i), cost + 1, i))
     return None
-        # newmatrix do huy ban tao bang cach chuyen curstate sang newmatrix
        
 def neighbors(puzzle, cell):
     res = []
@@ -255,13 +242,27 @@ def Display(State):
         print()
         for j in range(len(output[0])):
             print(output[i][j], end=' ')
-                 
+
+
+
 CreateCNF(mine, cnf)
 for clause in cnf.clauses:
-    print(clause)     
-print(AStar(mine))
+    print(clause)    
+
+
+tracemalloc.start()
+startTime = time.time()
 Output = AStar(mine)
+tracemalloc.stop()
+t = (time.time() - startTime)
+
+startTime = time.time()
+Output = AStar(mine)
+
 Display(Output) 
+print()
+print(f"Running time: {t * 1000:.4f} ms")
+
 
 # with Solver(bootstrap_with=cnf) as solver:
 #     # 1.1 call the solver for this formula:
