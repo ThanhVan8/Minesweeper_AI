@@ -2,26 +2,30 @@ from pysat.formula import CNF
 from pysat.solvers import Solver
 cnf = CNF()
 import numpy as np
+import heapq
+import random, time, tracemalloc
 
-# mine = [['-','-','0'],
-#         ['-','-','-'],
-#         ['1','-','-']]
+cnf = CNF()
 
-mine = [['1','1','-'],
-        ['1','-','0'],
-        ['-','-','-']]
+mine = [['1','1','1'],
+        ['-','-','-'],
+        ['-','2','-']]
+
+# mine = [['-','-','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','-','2'],
+#         ['-','-','-','1','-'],
+#         ['-','1','1','1','1']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
 #         ['-','-','-']]
 
 # mine = [['0','-','-'],
-#         ['-','-','-'],
-#         ['-','1','-']]
+#         ['1','-','1'],
+#         ['1','-','-']]
 
-# mine = [['-','-','-'],
-#         ['-','-','-'],
-#         ['-','2','-']]
+# mine=np.array(mine)
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -88,88 +92,169 @@ def CreateCNF(InitMatrix, cnf):
                     clause = [int(literal) for literal in clause]
                     if clause not in cnf.clauses:
                         cnf.append(clause)
-                        # myPos.append(clause)
                 for clause in neg:
                     clause = [int(literal) for literal in clause]
                     if clause not in cnf.clauses:
                         cnf.append(clause)
-                        # myNeg.append(clause)
                 
     if [] in cnf.clauses:
         cnf.clauses.remove([])  
     return cnf     
 
-# lấy các CNF True
-def preHandle(cnf):
-    myPos = []
-    for clause in cnf:
-        if(clause[0]>0): 
-            myPos.append(clause)
-    return myPos 
-            
-def isConflict(mineList):
-    tmp = mine.copy()
-    x = len(mine)
-    # gán bom vào ma trận
-    for i in mineList:
-        # dòng 1
-        if(i<=x):
-            tmp[0][i-1] = 'X'
-        else:   # các dòng còn lại
-            tmp[int((i-1)/x)][int(i/x)-1] = 'X'
-            
-    for i in range(len(tmp)):
-        for j in range(len(tmp[i])):
-            if(tmp[i][j].isnumeric()):
-                neighbor_list = neighbors(tmp, (i, j))
-                count = 0
-                for k in neighbor_list:
-                    if(k in mineList):
-                        count+=1
-                        # số bom không hợp lệ
-                        if(count > int(tmp[i][j])):
-                            return False
-    return True
-            
+def checkExist(state, clause):
+    for i in clause:
+        for j in state:
+            if int(i) in j:
+                return True
+    return False
+def conflict(state):
+    heuristic = 0
     
+    for clause in cnf.clauses:
+        if checkExist(state, clause) == False:
+            heuristic += 1
             
+    return heuristic
 
-def bruteForce(cnf):
+def NewMatrix(mine):
+    n = len(mine)
+    index_matrix = []
+    for i in range (n):
+        index_matrix.append([0 for j in range(len(mine[i]))])
 
-    myPos = preHandle(cnf)
-    tmpPos = myPos.copy()   
-    first = myPos.pop(0)
+    for i in range(n):
+        for j in range(n):
+            if mine[i][j] != '-':
+                index_matrix[i][j] = -int((i*n+j+1))
+            else:
+                index_matrix[i][j] = 0
+    return index_matrix
+
+def checkIfHaveInfo(puzzle, cell):
+    if puzzle[cell[0]][cell[1]] == 0:
+        adjPoint = [-1,0,1]
+        for i in adjPoint:
+            for j in adjPoint:
+                if i == 0 and j == 0:
+                    continue
+                if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
+                    if puzzle[cell[0]+i][cell[1]+j] != 0:
+                        return True
+        return False
+    return False
+
+def singleVars(cnf):
+    return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
+
+def CreateInitState(ValueMatrix, Simply_List):
+    n = len(ValueMatrix)
+    #use single CNF to create InitState
+    for i in Simply_List:
+        if i > 0:
+            value = i -1
+            row = value // n
+            col = value % n
+            ValueMatrix[row][col] = i
+        else: 
+            value = abs(i) -1
+            row = value // n
+            col = value % n
+            ValueMatrix[row][col] = i
     
-    for i in first:
-        mineList = []
-        index = [i]
-        while(True):
-            nextStep = []
-            mineList.append(index[0])             
-            for bomb in mineList:
-                tmp = []
-                for j in tmpPos:
-                    if(bomb not in j):
-                        tmp.append(j)
-                tmpPos = tmp.copy()
-            if(len(tmpPos)!=0):
-                nextStep.append(tmpPos[0])
-                index = nextStep[-1].copy()
-                            
-            if(len(tmpPos) == 0):
-                # kiểm tra kết quả
-                if(isConflict(mineList) and mineList):
-                    return mineList
+    return ValueMatrix       
 
-                tmpPos = myPos.copy()   
-                mineList.pop(-1)   
-                index.pop(0)
-                if(len(index) == 0):
-                    break
+def CreateSuccessors(InitMatrix):
+    
+    successors = []
+    n = len(InitMatrix)
+    #create successors
+    for i in range(n):
+        for j in range(n):
+            if checkIfHaveInfo(InitMatrix, (i,j)) == True:
+                #print(tmp)
+                
+                suc1 = [row[:] for row in InitMatrix]
+                suc2 = [row[:] for row in InitMatrix]
+          
+                value1 = int(i*n+j+1)
+                value2 = int(-(i*n+j+1))
+          
+                suc1[i][j] = value1
+                suc2[i][j] = value2
+                
+                successors.append(suc1)
+                successors.append(suc2)
+                
+               
+    return successors
+
+def AStar(mine):
+    singleCNF = singleVars(cnf)
+    startstate = CreateInitState(NewMatrix(mine), singleCNF)
+    frontier = [(conflict(startstate), conflict(startstate), 0, startstate)]
+    exploredSet = []
+    while True:
+        f, h, cost, curState = heapq.heappop(frontier)
+        if h == 0:
+            return curState
+        
+        exploredSet.append(curState)
+        
+        #xu ly tao successor
+        successor = CreateSuccessors(curState)
+        
+        for i in successor:
+            if i not in exploredSet:
+                heapq.heappush(frontier, (conflict(i) + cost + 1, conflict(i), cost + 1, i))
     return None
+            
+ 
+def Display(State):
+    output = [row[:] for row in State]
+    adjPoint = [-1, 0 , 1]
+    for i in range(len(State)):
+        for j in range(len(State[0])):
+            if State[i][j] > 0: # kiem tra o bom
+                output[i][j] = 'X'
+            elif State[i][j] < 0:
+                cnt = 0
+                for k in adjPoint:
+                    for l in adjPoint:
+                        if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
+                            if State[i + k][j + l] > 0 :
+                                cnt += 1
+                output[i][j] = cnt
+            elif State[i][j] == 0:
+                output[i][j] = '-'
+            
+    for i in range(len(output)):
+        print()
+        for j in range(len(output[0])):
+            print(output[i][j], end=' ')
 
-CreateCNF(mine, cnf)    
-print(bruteForce(cnf))
+CreateCNF(mine, cnf)
+for clause in cnf.clauses:
+    print(clause)    
 
 
-# print(isConflict([5,7]))
+
+tracemalloc.start()
+startTime = time.time()
+Output = AStar(mine)
+tracemalloc.stop()
+t = (time.time() - startTime)
+
+startTime = time.time()
+Output = AStar(mine)
+
+Display(Output) 
+print()
+print(f"Running time: {t * 1000:.4f} ms")
+
+
+# with Solver(bootstrap_with=cnf) as solver:
+#     # 1.1 call the solver for this formula:
+#     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
+
+#     # 1.2 the formula is satisfiable and so has a model:
+#     print('and the model is:', solver.get_model())

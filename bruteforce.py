@@ -7,9 +7,9 @@ import numpy as np
 #         ['-','-','-'],
 #         ['1','-','-']]
 
-# mine = [['1','1','-'],
-#         ['-','-','-'],
-#         ['-','-','2']]
+mine = [['1','1','1'],
+        ['-','-','2'],
+        ['-','2','-']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
@@ -132,10 +132,8 @@ def isConflict(mineList):
                         if(count > int(tmp[i][j])):
                             return False
     return True
-            
-    
-            
 
+            
 def bruteForce(cnf):
 
     myPos = preHandle(cnf)
@@ -170,5 +168,49 @@ def bruteForce(cnf):
                     break
     return None
 
+def NewMatrix(mine):
+    n = len(mine)
+    index_matrix = []
+    for i in range (n):
+        index_matrix.append([0 for j in range(len(mine[i]))])
+
+    for i in range(n):
+        for j in range(n):
+            if mine[i][j] != '-':
+                index_matrix[i][j] = -int((i*n+j+1))
+            else:
+                index_matrix[i][j] = 0
+    return index_matrix
+
+def Display(State):
+    #tien xu ly
+    tmp = [row[:] for row in NewMatrix(mine)]
+    for i in range(len(tmp)):
+        for j in range(len(tmp[0])):
+            if i*len(mine)+j+1 in State:
+                tmp[i][j] = i*len(mine)+j+1
+    # xu ly output
+    output = [row[:] for row in tmp]
+    adjPoint = [-1, 0 , 1]
+    for i in range(len(tmp)):
+        for j in range(len(tmp[0])):
+            if tmp[i][j] > 0: # kiem tra o bom
+                output[i][j] = 'X'
+            elif tmp[i][j] < 0:
+                cnt = 0
+                for k in adjPoint:
+                    for l in adjPoint:
+                        if 0 <= i+k < len(tmp) and 0 <= j+l < len(tmp[0]):
+                            if tmp[i + k][j + l] > 0 :
+                                cnt += 1
+                output[i][j] = cnt
+            elif tmp[i][j] == 0:
+                output[i][j] = '-'
+            
+    for i in range(len(output)):
+        print()
+        for j in range(len(output[0])):
+            print(output[i][j], end=' ')
+
 CreateCNF(mine, cnf)    
-print(bruteForce(cnf))
+Display(bruteForce(cnf))
