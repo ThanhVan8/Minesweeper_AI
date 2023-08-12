@@ -170,6 +170,7 @@ def CreateSuccessors(InitMatrix):
     for i in range(n):
         for j in range(n):
             if checkIfHaveInfo(InitMatrix, (i,j)) == True:
+                #print(tmp)
                 
                 suc1 = [row[:] for row in InitMatrix]
                 suc2 = [row[:] for row in InitMatrix]
@@ -205,19 +206,7 @@ def AStar(mine):
             if i not in exploredSet:
                 heapq.heappush(frontier, (conflict(i) + cost + 1, conflict(i), cost + 1, i))
     return None
-       
-def neighbors(puzzle, cell):
-    res = []
-    adjPoint = [-1,0,1]
-    nCol = len(puzzle[0])
-    for i in adjPoint:
-        for j in adjPoint:
-            if i == 0 and j == 0:
-                continue
-            if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
-                if puzzle[cell[0]+i][cell[1]+j].isnumeric() is False:
-                    res.append((cell[0]+i)*nCol +cell[1]+j +1)
-    return res       
+            
  
 def Display(State):
     output = [row[:] for row in State]
@@ -227,14 +216,13 @@ def Display(State):
             if State[i][j] > 0: # kiem tra o bom
                 output[i][j] = 'X'
             elif State[i][j] < 0:
-                if State[i][j] < 0:
-                    cnt = 0
-                    for k in adjPoint:
-                        for l in adjPoint:
-                            if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
-                                if State[i + k][j + l] > 0 :
-                                    cnt += 1
-                    output[i][j] = cnt
+                cnt = 0
+                for k in adjPoint:
+                    for l in adjPoint:
+                        if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
+                            if State[i + k][j + l] > 0 :
+                                cnt += 1
+                output[i][j] = cnt
             elif State[i][j] == 0:
                 output[i][j] = '-'
             
@@ -243,11 +231,10 @@ def Display(State):
         for j in range(len(output[0])):
             print(output[i][j], end=' ')
 
-
-
 CreateCNF(mine, cnf)
 for clause in cnf.clauses:
     print(clause)    
+
 
 
 tracemalloc.start()
