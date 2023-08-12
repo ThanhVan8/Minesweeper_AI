@@ -31,7 +31,7 @@ mine = [['0','1','1'],
 #         [1,'-',1],
  #        [1,'-','-']]
 
-mine=np.array(mine)
+#mine=np.array(mine)
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -145,8 +145,10 @@ with Solver(bootstrap_with=cnf) as solver:
     
 def NewMatrix(mine):
     n = len(mine)
-    index_matrix = np.zeros(shape=(n,n))
-    #print(index_matrix)
+    index_matrix = []
+    for i in range (n):
+        index_matrix.append([0 for j in range(len(mine[i]))])
+
     for i in range(n):
         for j in range(n):
             if mine[i][j] != '-':
@@ -191,24 +193,39 @@ def CreateInitState(ValueMatrix, Simply_List):
             ValueMatrix[row][col] = i
     
     return ValueMatrix    
-            
 
-def CreateSuccessors(ValueMatrix):
+
+def CreateSuccessors(InitMatrix):
+    
     successors = []
-    n = len(ValueMatrix)
+    n = len(InitMatrix)
+    #print(tmp[2][1])
     #create successors
     for i in range(n):
         for j in range(n):
-            if checkIfHaveInfo(ValueMatrix, (i,j)) == True:
-                suc = ValueMatrix.copy()
-                suc[i][j] = i*n+j+1  
-                successors.append(suc)  
+            if checkIfHaveInfo(InitMatrix, (i,j)) == True:
+                #print(tmp)
                 
+                suc1 = [row[:] for row in InitMatrix]
+                suc2 = [row[:] for row in InitMatrix]
+                print(suc1)
+                print(suc2)
+                value1 = int(i*n+j+1)
+                value2 = int(-(i*n+j+1))
+                print(value1)
+                print(value2)
+                suc1[i][j] = value1
+                suc2[i][j] = value2
+                print(suc1)  
+                print(suc2)  
+                #print(InitMatrix)
+                successors.append(suc1)
+                successors.append(suc2)
+                print()  
+               
     return successors   
      
-print(ValueMatrix)
+
 singleCNF = singleVars(cnf)
 InitState = CreateInitState(ValueMatrix, singleCNF)
 tmp = CreateSuccessors(InitState)
-for i in tmp:
-    print(i)
