@@ -1,46 +1,175 @@
 from pysat.formula import CNF
 from pysat.solvers import Solver
+cnf = CNF()
 import numpy as np
-# a = [4, 5]
-# b = [-4, 5, -6]
-# a.extend(b)
-# print(a)
-# print(list(set(a)))
 
-def resolve(c1, c2):
-    clause = []
-    n = min(len(c1), len(c2))
-    [tmp1, tmp2] = [c1, c2] if n == len(c1) else [c2, c1]
-    for v1 in tmp1:
-        for v2 in tmp2:
-            if v1 == -v2:
-                tmp1.remove(v1)
-                tmp2.remove(v2)
-                tmp1.extend(tmp2)
-                clause.extend(list(set(tmp1)))
-                break
-    for i in range(len(clause)-1):
-            if -clause[i] in clause:
-                return []
-    return clause
+# mine = [['-','-','0'],
+#         ['-','-','-'],
+#         ['1','-','-']]
 
-def resolution(cnf):
-    tmpClause = cnf.clauses.copy()
-    singleVars = [tmp[0] for tmp in tmpClause if len(tmp) == 1]
+mine = [['1','1','-'],
+        ['1','-','0'],
+        ['-','-','-']]
 
-    for i in range(len(tmpClause)-1):
-        for j in range(i+1, len(tmpClause)):
-            resolvents = resolve(tmpClause[i].copy(), tmpClause[j].copy())
-            if len(resolvents)!=0:
-                tmpClause.append(resolvents)
-            if len(resolvents) == 1:
-                if resolvents[0] not in singleVars:
-                    singleVars.append(resolvents[0])
-                    if -resolvents[0] in singleVars:
-                        return []
+# mine = [['3','-','-'],
+#         ['-','-','-'],
+#         ['-','-','-']]
+
+# mine = [['0','-','-'],
+#         ['-','-','-'],
+#         ['-','1','-']]
+
+# mine = [['-','-','-'],
+#         ['-','-','-'],
+#         ['-','2','-']]
+
+def combinations_positive(ValueList, k):
+    if k == 0:
+        return [[]]
+    if not ValueList:
+        return []
+
+    result = []
+    first, rest = ValueList[0], ValueList[1:]
+    for combo in combinations_positive(rest, k - 1):
+        result.append([first] + combo)
+    result.extend(combinations_positive(rest, k))
+    return result
+
+def combinations_negative(ValueList, k):
+    if k == 0:
+        return [[]]
+    if not ValueList:
+        return []
+
+    result = []
+    first, rest = ValueList[0], ValueList[1:]
+    for combo in combinations_negative(rest, k - 1):
+        result.append([-first] + combo)  # Đổi dấu cho phần tử đầu tiên
+    result.extend(combinations_negative(rest, k))
+    return result
+
+def neighbors(puzzle, cell):
+    res = []
+    adjPoint = [-1,0,1]
+    nCol = len(puzzle[0])
+    for i in adjPoint:
+        for j in adjPoint:
+            if i == 0 and j == 0:
+                continue
+            if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
+                if puzzle[cell[0]+i][cell[1]+j].isnumeric() is False:
+                    res.append((cell[0]+i)*nCol +cell[1]+j +1)
+    return res
+
+def CreateCNF(InitMatrix, cnf):
+    pos = []
+    neg = []
+    neighbor_list = []
     
-    return singleVars
+    for i in range(len(InitMatrix)):
+        for j in range(len(InitMatrix[i])):
+            if  InitMatrix[i][j].isnumeric():
+                simple = [-(i*len(InitMatrix) +j +1)]
+                cnf.append(simple)
+                neighbor_list = neighbors(InitMatrix, (i, j))
+                if int(InitMatrix[i][j]) == 0:
+                    neg = combinations_negative(neighbor_list,1)
+                elif int(InitMatrix[i][j]) == len(neighbor_list):
+                    pos = combinations_positive(neighbor_list,1)
+                else:
+                    #positive num (having bomb)
+                    pos = combinations_positive(neighbor_list,len(neighbor_list)-int(InitMatrix[i][j]) + 1)
+                    #negative num (not having bomb)
+                    if len(neighbor_list) - int(InitMatrix[i][j]) != 1:
+                        neg = combinations_negative(neighbor_list,int(InitMatrix[i][j])+1)
+                    
+                for clause in pos:
+                    clause = [int(literal) for literal in clause]
+                    if clause not in cnf.clauses:
+                        cnf.append(clause)
+                        # myPos.append(clause)
+                for clause in neg:
+                    clause = [int(literal) for literal in clause]
+                    if clause not in cnf.clauses:
+                        cnf.append(clause)
+                        # myNeg.append(clause)
+                
+    if [] in cnf.clauses:
+        cnf.clauses.remove([])  
+    return cnf     
+
+# lấy các CNF True
+def preHandle(cnf):
+    myPos = []
+    for clause in cnf:
+        if(clause[0]>0): 
+            myPos.append(clause)
+    return myPos 
+            
+def isConflict(mineList):
+    tmp = mine.copy()
+    x = len(mine)
+    # gán bom vào ma trận
+    for i in mineList:
+        # dòng 1
+        if(i<=x):
+            tmp[0][i-1] = 'X'
+        else:   # các dòng còn lại
+            tmp[int((i-1)/x)][int(i/x)-1] = 'X'
+            
+    for i in range(len(tmp)):
+        for j in range(len(tmp[i])):
+            if(tmp[i][j].isnumeric()):
+                neighbor_list = neighbors(tmp, (i, j))
+                count = 0
+                for k in neighbor_list:
+                    if(k in mineList):
+                        count+=1
+                        # số bom không hợp lệ
+                        if(count > int(tmp[i][j])):
+                            return False
+    return True
+            
+    
+            
+
+def bruteForce(cnf):
+
+    myPos = preHandle(cnf)
+    tmpPos = myPos.copy()   
+    first = myPos.pop(0)
+    
+    for i in first:
+        mineList = []
+        index = [i]
+        while(True):
+            nextStep = []
+            mineList.append(index[0])             
+            for bomb in mineList:
+                tmp = []
+                for j in tmpPos:
+                    if(bomb not in j):
+                        tmp.append(j)
+                tmpPos = tmp.copy()
+            if(len(tmpPos)!=0):
+                nextStep.append(tmpPos[0])
+                index = nextStep[-1].copy()
+                            
+            if(len(tmpPos) == 0):
+                # kiểm tra kết quả
+                if(isConflict(mineList) and mineList):
+                    return mineList
+
+                tmpPos = myPos.copy()   
+                mineList.pop(-1)   
+                index.pop(0)
+                if(len(index) == 0):
+                    break
+    return None
+
+CreateCNF(mine, cnf)    
+print(bruteForce(cnf))
 
 
-cnf = CNF(from_clauses=[[4, 5], [4, 5, 6], [-4, -5], [-4, -6], [-5, -6], [5, 6], [4, 5, 6, 7], [4, 5, 6, 9], [4, 5, 7, 9], [4, 6, 7, 9], [5, 6, 7, 9], [-4, -5, -6], [-4, -5, -7], [-4, -5, -9], [-4, -6, -7], [-4, -6, -9], [-4, -7, -9], [-5, -6, -7], [-5, -6, -9], [-5, -7, -9], [-6, -7, -9]])
-print(resolution(cnf))
+# print(isConflict([5,7]))

@@ -3,9 +3,9 @@ from pysat.solvers import Solver
 import numpy as np
 cnf = CNF()
 
-# mine = [['1','1','1'],
-#         ['-','-','-'],
-#         ['-','2','-']]
+mine = [['1','1','1'],
+        ['-','-','2'],
+        ['-','2','-']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
@@ -45,11 +45,11 @@ cnf = CNF()
 #         ['2','2','1','-','-','-','1','1','1'],
 #         ['-','-','1','-','0','-','1','-','1']]
 
-mine = [['-','1','-','1','-'],
-        ['-','2','1','-','-'],
-        ['3','-','-','2','2'],
-        ['2','-','-','1','-'],
-        ['-','1','1','1','1']]
+# mine = [['-','1','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','2','2'],
+#         ['2','-','-','1','-'],
+#         ['-','1','1','1','1']]
 
 # mine = [[' ','1',' ','1',' '],
 #         ['x','2','1',' ','x'],
@@ -69,7 +69,6 @@ mine = [['-','1','-','1','-'],
 #         ['-','-','-','1','-'],
 #         ['-','1','1','1','1']]
 
-mine=np.array(mine)
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -146,64 +145,65 @@ def CreateCNF(InitMatrix, cnf):
     return cnf     
 
 CreateCNF(mine, cnf)       
+
 for clause in cnf.clauses:
     print(clause)
 
-with Solver(bootstrap_with=cnf) as solver:
-    # 1.1 call the solver for this formula:
-    print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
+# with Solver(bootstrap_with=cnf) as solver:
+#     # 1.1 call the solver for this formula:
+#     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
 
-    # 1.2 the formula is satisfiable and so has a model:
-    print('and the model is:', solver.get_model())
+#     # 1.2 the formula is satisfiable and so has a model:
+#     print('and the model is:', solver.get_model())
 
-# def Astar(mine, cnf):
+# # def Astar(mine, cnf):
 
-def resolve(c1, c2):
-    clause = []
-    n = min(len(c1), len(c2))
-    [tmp1, tmp2] = [c1, c2] if n == len(c1) else [c2, c1]
-    for v1 in tmp1:
-        for v2 in tmp2:
-            if v1 == -v2:
-                tmp1.remove(v1)
-                tmp2.remove(v2)
-                tmp1.extend(tmp2)
-                clause.extend(list(set(tmp1)))
-                break
-    for i in range(len(clause)-1):
-            if -clause[i] in clause:
-                return []
-    return clause
+# def resolve(c1, c2):
+#     clause = []
+#     n = min(len(c1), len(c2))
+#     [tmp1, tmp2] = [c1, c2] if n == len(c1) else [c2, c1]
+#     for v1 in tmp1:
+#         for v2 in tmp2:
+#             if v1 == -v2:
+#                 tmp1.remove(v1)
+#                 tmp2.remove(v2)
+#                 tmp1.extend(tmp2)
+#                 clause.extend(list(set(tmp1)))
+#                 break
+#     for i in range(len(clause)-1):j
+#             if -clause[i] in clause:
+#                 return []
+#     return clause
 
-def resolution(cnf):
-    tmpClause = cnf.clauses.copy()
-    singleVars = [tmp[0] for tmp in tmpClause if len(tmp) == 1]
+# def resolution(cnf):
+#     tmpClause = cnf.clauses.copy()
+#     singleVars = [tmp[0] for tmp in tmpClause if len(tmp) == 1]
 
-    for i in range(len(tmpClause)-1):
-        for j in range(i+1, len(tmpClause)):
-            resolvents = resolve(tmpClause[i].copy(), tmpClause[j].copy())
-            if len(resolvents)!=0:
-                tmpClause.append(resolvents)
-            if len(resolvents) == 1:
-                if resolvents[0] not in singleVars:
-                    singleVars.append(resolvents[0])
-                    if -resolvents[0] in singleVars:
-                        return []
+#     for i in range(len(tmpClause)-1):
+#         for j in range(i+1, len(tmpClause)):
+#             resolvents = resolve(tmpClause[i].copy(), tmpClause[j].copy())
+#             if len(resolvents)!=0:
+#                 tmpClause.append(resolvents)
+#             if len(resolvents) == 1:
+#                 if resolvents[0] not in singleVars:
+#                     singleVars.append(resolvents[0])
+#                     if -resolvents[0] in singleVars:
+#                         return []
     
-    return singleVars
+#     return singleVars
 
-def singleVars(cnf):
-    return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
+# def singleVars(cnf):
+#     return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
 
-def checkIfHaveInfo(puzzle, cell):
-    if puzzle[cell[0]][cell[1]] == 0:
-        adjPoint = [-1,0,1]
-        for i in adjPoint:
-            for j in adjPoint:
-                if i == 0 and j == 0:
-                    continue
-                if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
-                    if puzzle[cell[0]+i][cell[1]+j] != '0':
-                        return False
-        return True
-    return False
+# def checkIfHaveInfo(puzzle, cell):
+#     if puzzle[cell[0]][cell[1]] == 0:
+#         adjPoint = [-1,0,1]
+#         for i in adjPoint:
+#             for j in adjPoint:
+#                 if i == 0 and j == 0:
+#                     continue
+#                 if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
+#                     if puzzle[cell[0]+i][cell[1]+j] != '0':
+#                         return False
+#         return True
+#     return False

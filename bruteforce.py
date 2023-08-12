@@ -7,9 +7,9 @@ import numpy as np
 #         ['-','-','-'],
 #         ['1','-','-']]
 
-mine = [['1','1','-'],
-        ['1','-','0'],
-        ['-','-','-']]
+# mine = [['1','1','-'],
+#         ['-','-','-'],
+#         ['-','-','2']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
@@ -116,7 +116,9 @@ def isConflict(mineList):
         if(i<=x):
             tmp[0][i-1] = 'X'
         else:   # các dòng còn lại
-            tmp[int((i-1)/x)][int(i/x)-1] = 'X'
+            row = int((i-1)/x)
+            col = i - row*x -1
+            tmp[row][col] = 'X'
             
     for i in range(len(tmp)):
         for j in range(len(tmp[i])):
