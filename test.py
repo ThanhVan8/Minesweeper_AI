@@ -5,7 +5,7 @@ import heapq
 cnf = CNF()
 
 mine = [['1','1','1'],
-        ['-','-','2'],
+        ['-','-','-'],
         ['-','2','-']]
 
 # mine = [['-','-','-','1','-'],
@@ -67,9 +67,12 @@ def CreateCNF(InitMatrix, cnf):
     pos = []
     neg = []
     neighbor_list = []
+    
     for i in range(len(InitMatrix)):
         for j in range(len(InitMatrix[i])):
             if  InitMatrix[i][j].isnumeric():
+                simple = [-(i*len(InitMatrix) +j +1)]
+                cnf.append(simple)
                 neighbor_list = neighbors(InitMatrix, (i, j))
                 if int(InitMatrix[i][j]) == 0:
                     neg = combinations_negative(neighbor_list,1)
@@ -80,7 +83,7 @@ def CreateCNF(InitMatrix, cnf):
                     pos = combinations_positive(neighbor_list,len(neighbor_list)-int(InitMatrix[i][j]) + 1)
                     #negative num (not having bomb)
                     if len(neighbor_list) - int(InitMatrix[i][j]) != 1:
-                        neg = combinations_negative(neighbor_list,len(neighbor_list) - int(InitMatrix[i][j]))
+                        neg = combinations_negative(neighbor_list,int(InitMatrix[i][j])+1)
                     
                 for clause in pos:
                     clause = [int(literal) for literal in clause]
@@ -103,7 +106,7 @@ def checkExist(state, clause):
         # print(i)
         for j in state:
             # print(j)
-            if i in j:
+            if int(i) in j:
                 return True
     return False
 def conflict(state):
@@ -124,7 +127,7 @@ def NewMatrix(mine):
     for i in range(n):
         for j in range(n):
             if mine[i][j] != '-':
-                index_matrix[i][j] = -(i*n+j+1)
+                index_matrix[i][j] = -int((i*n+j+1))
             else:
                 index_matrix[i][j] = 0
     return index_matrix
@@ -195,12 +198,11 @@ def AStar(mine):
     #newmatrix se dc tao tu ma tran ban dau
     singleCNF = singleVars(cnf)
     startstate = CreateInitState(NewMatrix(mine), singleCNF)
-    frontier = [(len(cnf.clauses), len(cnf.clauses), 0, startstate)]
+    frontier = [(conflict(startstate), conflict(startstate), 0, startstate)]
     exploredSet = []
     while True:
         f, h, cost, curState = heapq.heappop(frontier)
-        
-        if h == 0 :
+        if h == 0:
             return curState
         
         exploredSet.append(curState)
@@ -216,27 +218,50 @@ def AStar(mine):
                 heapq.heappush(frontier, (conflict(successor[i]) + cost + 1, conflict(successor[i]), cost + 1, successor[i]))
     return None
         # newmatrix do huy ban tao bang cach chuyen curstate sang newmatrix
-        
-        
+       
+def neighbors(puzzle, cell):
+    res = []
+    adjPoint = [-1,0,1]
+    nCol = len(puzzle[0])
+    for i in adjPoint:
+        for j in adjPoint:
+            if i == 0 and j == 0:
+                continue
+            if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
+                if puzzle[cell[0]+i][cell[1]+j].isnumeric() is False:
+                    res.append((cell[0]+i)*nCol +cell[1]+j +1)
+    return res       
+ 
+def Display(State):
+    output = [row[:] for row in State]
+    adjPoint = [-1, 0 , 1]
+    for i in range(len(State)):
+        for j in range(len(State[0])):
+            if State[i][j] > 0: # kiem tra o bom
+                output[i][j] = 'X'
+            elif State[i][j] < 0:
+                if State[i][j] < 0:
+                    cnt = 0
+                    for k in adjPoint:
+                        for l in adjPoint:
+                            if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
+                                if State[i + k][j + l] > 0 :
+                                    cnt += 1
+                    output[i][j] = cnt
+            elif State[i][j] == 0:
+                output[i][j] = '-'
+            
+    for i in range(len(output)):
+        print()
+        for j in range(len(output[0])):
+            print(output[i][j], end=' ')
                  
-CreateCNF(mine, cnf)     
-print(AStar(mine))  
-# for clause in cnf.clauses:
-#     print(clause)
-# singleCNF = singleVars(cnf)
-# InitState = CreateInitState(NewMatrix(mine), singleCNF)
-# tmp, index = CreateSuccessors(InitState)
-# for i in tmp:
-#     print(i, type(i))
-    
-# for i in index:
-#     print(i, type(i))
-# print(NewMatrix(mine))
-#print(AStar(mine))
-# for clause in cnf.clauses:
-#     print(clause)
-#print(conflict(mine1))
-
+CreateCNF(mine, cnf)
+for clause in cnf.clauses:
+    print(clause)     
+print(AStar(mine))
+Output = AStar(mine)
+Display(Output) 
 
 # with Solver(bootstrap_with=cnf) as solver:
 #     # 1.1 call the solver for this formula:

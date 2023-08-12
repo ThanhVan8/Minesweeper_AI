@@ -4,18 +4,18 @@ import numpy as np
 import heapq
 cnf = CNF()
 
-#mine = [['1','1','1'],
-#        ['-','-','-'],
-#        ['-','2','-']]
+mine = [['0','1','1'],
+        ['-','-','-'],
+       ['-','2','-']]
 
 
 
 
-mine = [['-','1','-','1','-'],
-        ['-','2','1','-','-'],
-        ['3','-','-','2','2'],
-        ['2','-','-','1','-'],
-        ['-','1','1','1','1']]
+#mine = [['-','1','-','1','-'],
+#        ['-','2','1','-','-'],
+#        ['3','-','-','2','2'],
+#        ['2','-','-','1','-'],
+#        ['-','1','1','1','1']]
 
 #recursion to find bomb clause 
 #mine = [['','0','0','0','0','2','-','3','-'],
@@ -31,11 +31,7 @@ mine = [['-','1','-','1','-'],
 #         [1,'-',1],
  #        [1,'-','-']]
 
-# mine = [['0','-','-'],
-#         ['1','-','1'],
-#         ['1','-','-']]
-
-mine=np.array(mine)
+#mine=np.array(mine)
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -91,19 +87,6 @@ def CreateCNF(InitMatrix, cnf):
 
             if  InitMatrix[i][j].isnumeric():
                 neighbor_list = neighbors(InitMatrix, (i, j))
-<<<<<<< HEAD
-                if int(InitMatrix[i][j]) == 0:
-                    neg = combinations_negative(neighbor_list,1)
-                elif int(InitMatrix[i][j]) == len(neighbor_list):
-                    pos = combinations_positive(neighbor_list,1)
-                else:
-                    #positive num (having bomb)
-                    pos = combinations_positive(neighbor_list,len(neighbor_list)-int(InitMatrix[i][j]) + 1)
-                    #negative num (not having bomb)
-                    if len(neighbor_list) - int(InitMatrix[i][j]) != 1:
-                        neg = combinations_negative(neighbor_list,len(neighbor_list) - int(InitMatrix[i][j]))
-                    
-=======
 
                 #checking CNF
                 if int(InitMatrix[i][j]) == 0: #check value = 0
@@ -118,7 +101,6 @@ def CreateCNF(InitMatrix, cnf):
                         neg = combinations_negative(neighbor_list,len(neighbor_list) - int(InitMatrix[i][j]))
                 
                 #append bomb clause to CNF
->>>>>>> 9aecdddb505cf5d41dffd8fd2ce53d568cbe061c
                 for clause in pos:
                     clause = [int(literal) for literal in clause] #convert integer list
                     if clause not in cnf.clauses: #check exist
@@ -145,14 +127,10 @@ for clause in cnf.clauses:
     
 
 
-# with Solver(bootstrap_with=cnf) as solver:
-#     # 1.1 call the solver for this formula:
-#     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
+with Solver(bootstrap_with=cnf) as solver:
+    # 1.1 call the solver for this formula:
+    print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
 
-<<<<<<< HEAD
-#     # 1.2 the formula is satisfiable and so has a model:
-#     print('and the model is:', solver.get_model())
-=======
     # 1.2 the formula is satisfiable and so has a model:
     print('and the model is:', solver.get_model())
 
@@ -167,8 +145,10 @@ for clause in cnf.clauses:
     
 def NewMatrix(mine):
     n = len(mine)
-    index_matrix = np.zeros(shape=(n,n))
-    #print(index_matrix)
+    index_matrix = []
+    for i in range (n):
+        index_matrix.append([0 for j in range(len(mine[i]))])
+
     for i in range(n):
         for j in range(n):
             if mine[i][j] != '-':
@@ -197,10 +177,9 @@ def singleVars(cnf):
     return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
 
 
-def CreateSuccessors(ValueMatrix, Simply_List):
-    successors = []
+def CreateInitState(ValueMatrix, Simply_List):
     n = len(ValueMatrix)
-    
+    #use single CNF to create InitState
     for i in Simply_List:
         if i > 0:
             value = i -1
@@ -212,20 +191,41 @@ def CreateSuccessors(ValueMatrix, Simply_List):
             row = value // n
             col = value % n
             ValueMatrix[row][col] = i
+    
+    return ValueMatrix    
+
+
+def CreateSuccessors(InitMatrix):
+    
+    successors = []
+    n = len(InitMatrix)
+    #print(tmp[2][1])
     #create successors
     for i in range(n):
         for j in range(n):
-            if checkIfHaveInfo(ValueMatrix, (i,j)) == True:
-                suc = ValueMatrix.copy()
-                suc[i][j] = i*n+j+1  
-                successors.append(suc)  
+            if checkIfHaveInfo(InitMatrix, (i,j)) == True:
+                #print(tmp)
                 
+                suc1 = [row[:] for row in InitMatrix]
+                suc2 = [row[:] for row in InitMatrix]
+                print(suc1)
+                print(suc2)
+                value1 = int(i*n+j+1)
+                value2 = int(-(i*n+j+1))
+                print(value1)
+                print(value2)
+                suc1[i][j] = value1
+                suc2[i][j] = value2
+                print(suc1)  
+                print(suc2)  
+                #print(InitMatrix)
+                successors.append(suc1)
+                successors.append(suc2  )
+                print()  
+               
     return successors   
-'''         
-print(ValueMatrix)
+     
+
 singleCNF = singleVars(cnf)
-tmp = CreateSuccessors(ValueMatrix, singleCNF)
-for i in tmp:
-    print(i)
-'''
->>>>>>> 9aecdddb505cf5d41dffd8fd2ce53d568cbe061c
+InitState = CreateInitState(ValueMatrix, singleCNF)
+tmp = CreateSuccessors(InitState)
