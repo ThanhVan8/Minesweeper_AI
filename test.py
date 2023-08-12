@@ -5,9 +5,24 @@ import heapq
 cnf = CNF()
 
 mine = [['1','1','1'],
-        ['-','-','-'],
+        ['-','-','2'],
         ['-','2','-']]
 
+# mine = [['-','-','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','-','2'],
+#         ['-','-','-','1','-'],
+#         ['-','1','1','1','1']]
+
+# mine = [['3','-','-'],
+#         ['-','-','-'],
+#         ['-','-','-']]
+
+# mine = [['0','-','-'],
+#         ['1','-','1'],
+#         ['1','-','-']]
+
+# mine=np.array(mine)
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -76,6 +91,9 @@ def CreateCNF(InitMatrix, cnf):
                     if clause not in cnf.clauses:
                         cnf.append(clause)
                 
+                # neighbor_list = []
+                # pos = []
+                # neg = []
     if [] in cnf.clauses:
         cnf.clauses.remove([])  
     return cnf     
@@ -85,7 +103,7 @@ def checkExist(state, clause):
         # print(i)
         for j in state:
             # print(j)
-            if i in j or -i in j:
+            if i in j:
                 return True
     return False
 def conflict(state):
@@ -149,10 +167,12 @@ def CreateSuccessors(InitMatrix):
     successors = []
     index = []
     n = len(InitMatrix)
+    #print(tmp[2][1])
     #create successors
     for i in range(n):
         for j in range(n):
             if checkIfHaveInfo(InitMatrix, (i,j)) == True:
+                #print(tmp)
                 
                 suc1 = [row[:] for row in InitMatrix]
                 suc2 = [row[:] for row in InitMatrix]
@@ -162,6 +182,7 @@ def CreateSuccessors(InitMatrix):
           
                 suc1[i][j] = value1
                 suc2[i][j] = value2
+                #print(InitMatrix)
                 successors.append(suc1)
                 successors.append(suc2)
                 index.append(value1)
@@ -171,6 +192,7 @@ def CreateSuccessors(InitMatrix):
     return successors, index
 
 def AStar(mine):
+    #newmatrix se dc tao tu ma tran ban dau
     singleCNF = singleVars(cnf)
     startstate = CreateInitState(NewMatrix(mine), singleCNF)
     frontier = [(len(cnf.clauses), len(cnf.clauses), 0, startstate)]
@@ -178,10 +200,13 @@ def AStar(mine):
     while True:
         f, h, cost, curState = heapq.heappop(frontier)
         
-        if h == 0:
+        if h == 0 :
             return curState
         
         exploredSet.append(curState)
+        # tmpcurState = list(i for j in curState for i in j)
+        # exploredSet.extend(curState)
+        # exploredSet = np.array([exploredSet])
         
         #xu ly tao successor
         successor, index = CreateSuccessors(curState)
@@ -190,8 +215,32 @@ def AStar(mine):
             if successor[i] not in exploredSet:
                 heapq.heappush(frontier, (conflict(successor[i]) + cost + 1, conflict(successor[i]), cost + 1, successor[i]))
     return None
+        # newmatrix do huy ban tao bang cach chuyen curstate sang newmatrix
         
         
                  
 CreateCNF(mine, cnf)     
 print(AStar(mine))  
+# for clause in cnf.clauses:
+#     print(clause)
+# singleCNF = singleVars(cnf)
+# InitState = CreateInitState(NewMatrix(mine), singleCNF)
+# tmp, index = CreateSuccessors(InitState)
+# for i in tmp:
+#     print(i, type(i))
+    
+# for i in index:
+#     print(i, type(i))
+# print(NewMatrix(mine))
+#print(AStar(mine))
+# for clause in cnf.clauses:
+#     print(clause)
+#print(conflict(mine1))
+
+
+# with Solver(bootstrap_with=cnf) as solver:
+#     # 1.1 call the solver for this formula:
+#     print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
+
+#     # 1.2 the formula is satisfiable and so has a model:
+#     print('and the model is:', solver.get_model())
