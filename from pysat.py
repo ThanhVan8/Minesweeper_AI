@@ -220,7 +220,7 @@ def CreateSuccessors(InitMatrix):
                 print(suc2)  
                 #print(InitMatrix)
                 successors.append(suc1)
-                successors.append(suc2)
+                successors.append(suc2  )
                 print()  
                
     return successors   
