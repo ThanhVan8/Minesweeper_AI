@@ -3,9 +3,9 @@ from pysat.solvers import Solver
 import numpy as np
 cnf = CNF()
 
-# mine = [['1','1','1'],
-#         ['-','-','-'],
-#         ['-','2','-']]
+mine = [['1','1','1'],
+        ['-','-','2'],
+        ['-','2','-']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
@@ -45,11 +45,11 @@ cnf = CNF()
 #         ['2','2','1','-','-','-','1','1','1'],
 #         ['-','-','1','-','0','-','1','-','1']]
 
-mine = [['-','1','-','1','-'],
-        ['-','2','1','-','-'],
-        ['3','-','-','2','2'],
-        ['2','-','-','1','-'],
-        ['-','1','1','1','1']]
+# mine = [['-','1','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','2','2'],
+#         ['2','-','-','1','-'],
+#         ['-','1','1','1','1']]
 
 # mine = [[' ','1',' ','1',' '],
 #         ['x','2','1',' ','x'],
@@ -132,6 +132,7 @@ def CreateCNF(InitMatrix, cnf):
                 for clause in pos:
                     clause = [int(literal) for literal in clause]
                     if clause not in cnf.clauses:
+                        
                         cnf.append(clause)
                 for clause in neg:
                     clause = [int(literal) for literal in clause]
@@ -195,7 +196,7 @@ def resolution(cnf):
 def singleVars(cnf):
     return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
 
-def checkIfHaveInfo(puzzle, cell):
+def checkIfHaveInfo(puzzle, cell): # True: co ttin
     if puzzle[cell[0]][cell[1]] == 0:
         adjPoint = [-1,0,1]
         for i in adjPoint:
@@ -203,7 +204,7 @@ def checkIfHaveInfo(puzzle, cell):
                 if i == 0 and j == 0:
                     continue
                 if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
-                    if puzzle[cell[0]+i][cell[1]+j] != '0':
-                        return False
-        return True
+                    if puzzle[cell[0]+i][cell[1]+j] != 0:
+                        return True
+        return False
     return False
