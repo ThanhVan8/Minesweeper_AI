@@ -184,14 +184,6 @@ def bruteForce(cnf):
                     mineList.pop(-1)
                 if(len(index) == 0):
                     break
-                    # xóa cái vị trí cuối đi
-                    # nextStep.pop(-1)
-                    # if(len(nextStep) == 0):
-                    #     break
-                    # else: 
-                    #     mineList.pop(-1)   
-                    #     index = nextStep[-1][0].pop()
-                        
     return None
 
 def NewMatrix(mine):
