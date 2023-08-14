@@ -1,27 +1,35 @@
 from pysat.formula import CNF
-from pysat.solvers import Solver
+import time, tracemalloc
+
 cnf = CNF()
-import numpy as np
 
-# mine = [['-','-','0'],
-#         ['-','-','-'],
-#         ['1','-','-']]
+# mine = [['1','1','1'],
+#         ['-','-','2'],
+#         ['-','2','-']]
 
-mine = [['1','1','1'],
-        ['-','-','2'],
-        ['-','2','-']]
+mine = [[' ','0',' ','0',' ','2','x','3','-'],
+        ['0',' ','0',' ',' ','2','x','5','-'],
+        [' ','0',' ',' ',' ','1','2','x','x'],
+        ['0',' ',' ',' ','0',' ','1','3','3'],
+        [' ','1','1','1',' ',' ',' ','1','x'],
+        ['0','1','x','1',' ','0',' ','1','1'],
+        ['0','1','1','1',' ',' ',' ',' ',' '],
+        ['2','2','1',' ','0',' ','1','1','1'],
+        ['x','x','1',' ','0',' ','1','x','1']]
+
+# mine = [['-','-','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','-','2'],
+#         ['-','-','-','1','-'],
+#         ['-','1','1','1','1']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
 #         ['-','-','-']]
 
 # mine = [['0','-','-'],
-#         ['-','-','-'],
-#         ['-','1','-']]
-
-# mine = [['-','-','-'],
-#         ['-','-','-'],
-#         ['-','2','-']]
+#         ['1','-','1'],
+#         ['1','-','-']]
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -88,123 +96,85 @@ def CreateCNF(InitMatrix, cnf):
                     clause = [int(literal) for literal in clause]
                     if clause not in cnf.clauses:
                         cnf.append(clause)
-                        # myPos.append(clause)
                 for clause in neg:
                     clause = [int(literal) for literal in clause]
                     if clause not in cnf.clauses:
                         cnf.append(clause)
-                        # myNeg.append(clause)
                 
     if [] in cnf.clauses:
         cnf.clauses.remove([])  
-    return cnf     
+    return cnf
 
-# lấy các CNF True
-def preHandle(cnf):
-    myPos = []
-    for clause in cnf:
-        if(clause[0]>0): 
-            myPos.append(clause)
-    return myPos 
-            
-def isConflict(mineList):
-    tmp = mine.copy()
-    x = len(mine)
-    # gán bom vào ma trận
-    for i in mineList:
-        # dòng 1
-        if(i<=x):
-            tmp[0][i-1] = 'X'
-        else:   # các dòng còn lại
-            row = int((i-1)/x)
-            col = i - row*x -1
-            tmp[row][col] = 'X'
-            
-    for i in range(len(tmp)):
-        for j in range(len(tmp[i])):
-            if(tmp[i][j].isnumeric()):
-                neighbor_list = neighbors(tmp, (i, j))
-                count = 0
-                for k in neighbor_list:
-                    if(k in mineList):
-                        count+=1
-                        # số bom không hợp lệ
-                        if(count > int(tmp[i][j])):
-                            return False
+def singleVars(cnf):
+    return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
+
+def checkExist(assignedList, clause):
+    for i in clause:
+        if i in assignedList:
+            return True
+    return False
+
+def checkConflict(assignedList):    
+    for clause in cnf.clauses:
+        if checkExist(assignedList, clause) == False:
+            return False
     return True
 
-            
-def bruteForce(cnf):
+def BruteforceSolver(mine):
+    singleCNFs = singleVars(cnf)
+    numCell = len(mine) * len(mine[0])
+    notAssigned = []
+    for cell in range(1, numCell+1):    # from 1 to numCell
+        if cell not in singleCNFs and -cell not in singleCNFs and (any(cell in clause for clause in cnf.clauses) or any(cell in clause for clause in cnf.clauses)):
+            notAssigned.append(cell)
 
-    myPos = preHandle(cnf)
-    tmpPos = myPos.copy()   
-    first = myPos.pop(0)
+    assigned = singleCNFs.copy()
     
-    for i in first:
-        mineList = []
-        index = [i]
-        while(True):
-            nextStep = []
-            mineList.append(index[0])             
-            for bomb in mineList:
-                tmp = []
-                for j in tmpPos:
-                    if(bomb not in j):
-                        tmp.append(j)
-                tmpPos = tmp.copy()
-            if(len(tmpPos)!=0):
-                nextStep.append(tmpPos[0])
-                index = nextStep[-1].copy()
-                            
-            if(len(tmpPos) == 0):
-                # kiểm tra kết quả
-                if(isConflict(mineList) and mineList):
-                    return mineList
+    maxRange = 2 ** len(notAssigned)
+    res = []
+    for i in range(maxRange):
+        suc = []
+        for j in range(len(notAssigned)):
+            bit = (i >> j) & 1  # Lấy giá trị bit thứ j của số i
+            value = -1 if bit == 0 else 1
+            suc.append(value * notAssigned[j])
+        res.append(suc) 
+        
+    for i in res:
+        tmp = assigned.copy()
+        for j in i:
+            tmp.append(j)
+        if checkConflict(tmp):
+            return tmp
+        
 
-                tmpPos = myPos.copy()   
-                mineList.pop(-1)   
-                index.pop(0)
-                if(len(index) == 0):
-                    break
-    return None
-
-def NewMatrix(mine):
-    n = len(mine)
-    index_matrix = []
-    for i in range (n):
-        index_matrix.append([0 for j in range(len(mine[i]))])
-
-    for i in range(n):
-        for j in range(n):
-            if mine[i][j] != '-':
-                index_matrix[i][j] = -int((i*n+j+1))
+def Display(resList):
+    State = [row[:] for row in mine]
+    for i in range(len(State)):
+        for j in range(len(State[0])):
+            idx = i*len(mine) +j+1
+            if idx in resList:
+                State[i][j] = idx
+            elif -idx in resList:
+                State[i][j] = -idx
             else:
-                index_matrix[i][j] = 0
-    return index_matrix
+                State[i][j] = 0
 
-def Display(State):
-    #tien xu ly
-    tmp = [row[:] for row in NewMatrix(mine)]
-    for i in range(len(tmp)):
-        for j in range(len(tmp[0])):
-            if i*len(mine)+j+1 in State:
-                tmp[i][j] = i*len(mine)+j+1
-    # xu ly output
-    output = [row[:] for row in tmp]
+    output = [row[:] for row in State]
     adjPoint = [-1, 0 , 1]
-    for i in range(len(tmp)):
-        for j in range(len(tmp[0])):
-            if tmp[i][j] > 0: # kiem tra o bom
+    for i in range(len(State)):
+        for j in range(len(State[0])):
+            if State[i][j] > 0: # kiem tra o bom
                 output[i][j] = 'X'
-            elif tmp[i][j] < 0:
+            elif State[i][j] < 0:
                 cnt = 0
                 for k in adjPoint:
                     for l in adjPoint:
-                        if 0 <= i+k < len(tmp) and 0 <= j+l < len(tmp[0]):
-                            if tmp[i + k][j + l] > 0 :
+                        if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
+                            if State[i + k][j + l] > 0 :
                                 cnt += 1
                 output[i][j] = cnt
-            elif tmp[i][j] == 0:
+            elif State[i][j] == 0:
                 output[i][j] = '-'
             
     for i in range(len(output)):
@@ -212,5 +182,18 @@ def Display(State):
         for j in range(len(output[0])):
             print(output[i][j], end=' ')
 
-CreateCNF(mine, cnf)    
-Display(bruteForce(cnf))
+CreateCNF(mine, cnf)
+for clause in cnf.clauses:
+    print(clause)
+    
+tracemalloc.start()
+startTime = time.time()
+Output = BruteforceSolver(mine)
+tracemalloc.stop()
+t = (time.time() - startTime)
+
+
+Display(Output)
+
+print()
+print(f"Running time: {t * 1000:.4f} ms")
