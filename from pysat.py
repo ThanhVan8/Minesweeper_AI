@@ -139,9 +139,6 @@ def CreateCNF(InitMatrix, cnf):
                     if clause not in cnf.clauses:
                         cnf.append(clause)
                 
-                # neighbor_list = []
-                # pos = []
-                # neg = []
     if [] in cnf.clauses:
         cnf.clauses.remove([])  
     return cnf     
@@ -156,55 +153,3 @@ with Solver(bootstrap_with=cnf) as solver:
 
     # 1.2 the formula is satisfiable and so has a model:
     print('and the model is:', solver.get_model())
-
-# def Astar(mine, cnf):
-
-def resolve(c1, c2):
-    clause = []
-    n = min(len(c1), len(c2))
-    [tmp1, tmp2] = [c1, c2] if n == len(c1) else [c2, c1]
-    for v1 in tmp1:
-        for v2 in tmp2:
-            if v1 == -v2:
-                tmp1.remove(v1)
-                tmp2.remove(v2)
-                tmp1.extend(tmp2)
-                clause.extend(list(set(tmp1)))
-                break
-    for i in range(len(clause)-1):
-            if -clause[i] in clause:
-                return []
-    return clause
-
-def resolution(cnf):
-    tmpClause = cnf.clauses.copy()
-    singleVars = [tmp[0] for tmp in tmpClause if len(tmp) == 1]
-
-    for i in range(len(tmpClause)-1):
-        for j in range(i+1, len(tmpClause)):
-            resolvents = resolve(tmpClause[i].copy(), tmpClause[j].copy())
-            if len(resolvents)!=0:
-                tmpClause.append(resolvents)
-            if len(resolvents) == 1:
-                if resolvents[0] not in singleVars:
-                    singleVars.append(resolvents[0])
-                    if -resolvents[0] in singleVars:
-                        return []
-    
-    return singleVars
-
-def singleVars(cnf):
-    return [tmp[0] for tmp in cnf.clauses if len(tmp) == 1]
-
-def checkIfHaveInfo(puzzle, cell): # True: co ttin
-    if puzzle[cell[0]][cell[1]] == 0:
-        adjPoint = [-1,0,1]
-        for i in adjPoint:
-            for j in adjPoint:
-                if i == 0 and j == 0:
-                    continue
-                if 0 <= cell[0]+i < len(puzzle) and 0 <= cell[1]+j < len(puzzle[0]):
-                    if puzzle[cell[0]+i][cell[1]+j] != 0:
-                        return True
-        return False
-    return False

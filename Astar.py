@@ -1,5 +1,6 @@
 from pysat.formula import CNF
 from pysat.solvers import Solver
+cnf = CNF()
 import numpy as np
 import heapq
 import random, time, tracemalloc

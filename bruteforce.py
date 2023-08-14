@@ -1,7 +1,6 @@
 from pysat.formula import CNF
 from pysat.solvers import Solver
-import numpy as np
-import random, time, tracemalloc
+import time, tracemalloc
 
 cnf = CNF()
 # mine = [['-','-','0'],
@@ -123,7 +122,9 @@ def isConflict(mineList):
         if(i<=x):
             tmp[0][i-1] = 'X'
         else:   # các dòng còn lại
-            tmp[int((i-1)/x)][int(i/x)-1] = 'X'
+            row = int((i-1)/x)
+            col = i - row*x -1
+            tmp[row][col] = 'X'
             
     for i in range(len(tmp)):
         for j in range(len(tmp[i])):
@@ -137,8 +138,7 @@ def isConflict(mineList):
                         if(count > int(tmp[i][j])):
                             return False
     return True
-
-            
+          
 def bruteForce(cnf):
 
     myPos = preHandle(cnf)
@@ -147,10 +147,10 @@ def bruteForce(cnf):
     
     for i in first:
         mineList = []
-        index = [i]
+        index = [[i]]
+        nextStep = []
         while(True):
-            nextStep = []
-            mineList.append(index[0])             
+            mineList.append(index[-1][0])             
             for bomb in mineList:
                 tmp = []
                 for j in tmpPos:
@@ -158,8 +158,8 @@ def bruteForce(cnf):
                         tmp.append(j)
                 tmpPos = tmp.copy()
             if(len(tmpPos)!=0):
-                nextStep.append(tmpPos[0])
-                index = nextStep[-1].copy()
+                nextStep= tmpPos[0].copy()
+                index.append(nextStep)
                             
             if(len(tmpPos) == 0):
                 # kiểm tra kết quả
@@ -168,32 +168,37 @@ def bruteForce(cnf):
 
                 tmpPos = myPos.copy()   
                 mineList.pop(-1)   
-                index.pop(0)
+                index[-1].pop(0)
+                while(len(index[-1])==0):
+                    index.pop(-1)
+                    if(len(index)==0):
+                        break
+                    index[-1].pop(0)
+                    mineList.pop(-1)
                 if(len(index) == 0):
                     break
     return None
 
-def NewMatrix(mine):
-    n = len(mine)
-    index_matrix = []
-    for i in range (n):
-        index_matrix.append([0 for j in range(len(mine[i]))])
-
-    for i in range(n):
-        for j in range(n):
-            if mine[i][j] != '-':
-                index_matrix[i][j] = -int((i*n+j+1))
-            else:
-                index_matrix[i][j] = 0
-    return index_matrix
-
-def Display(State):
+def Display(mineList):
     #tien xu ly
-    tmp = [row[:] for row in NewMatrix(mine)]
+
+    # tmp = [row[:] for row in NewMatrix(mine)]
+    # for i in range(len(tmp)):
+    #     for j in range(len(tmp[0])):
+    #         if i*len(mine)+j+1 in State:
+    #             tmp[i][j] = i*len(mine)+j+1
+
+    tmp = [row[:] for row in mine]
     for i in range(len(tmp)):
         for j in range(len(tmp[0])):
-            if i*len(mine)+j+1 in State:
-                tmp[i][j] = i*len(mine)+j+1
+            idx = i*len(mine) +j+1
+            if idx in mineList:
+                tmp[i][j] = idx
+            elif not any(idx in clause for clause in cnf.clauses) and not any(-idx in clause for clause in cnf.clauses):
+                tmp[i][j] = 0
+            else:
+                tmp[i][j] = -idx
+
     # xu ly output
     output = [row[:] for row in tmp]
     adjPoint = [-1, 0 , 1]
@@ -226,7 +231,6 @@ tracemalloc.stop()
 t = (time.time() - startTime)
 
 Display(Output)
-# print(Output)
 
 print()
 print(f"Running time: {t * 1000:.4f} ms")
