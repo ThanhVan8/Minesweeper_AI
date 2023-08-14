@@ -1,19 +1,20 @@
 from pysat.formula import CNF
 from pysat.solvers import Solver
-cnf = CNF()
 import numpy as np
+import random, time, tracemalloc
 
+cnf = CNF()
 # mine = [['-','-','0'],
 #         ['-','-','-'],
 #         ['1','-','-']]
 
-mine = [['1','1','1'],
-        ['-','-','2'],
-        ['-','2','-']]
-
-# mine = [['3','-','-'],
+# mine = [['1','1','1'],
 #         ['-','-','-'],
-#         ['-','-','-']]
+#         ['-','2','-']]
+
+mine = [['3','-','-'],
+        ['-','-','-'],
+        ['-','-','-']]
 
 # mine = [['0','-','-'],
 #         ['-','-','-'],
@@ -22,6 +23,12 @@ mine = [['1','1','1'],
 # mine = [['-','-','-'],
 #         ['-','-','-'],
 #         ['-','2','-']]
+
+# mine = [['-','-','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','-','2'],
+#         ['-','-','-','1','-'],
+#         ['-','1','1','1','1']]
 
 def combinations_positive(ValueList, k):
     if k == 0:
@@ -210,5 +217,16 @@ def Display(State):
         for j in range(len(output[0])):
             print(output[i][j], end=' ')
 
-CreateCNF(mine, cnf)    
-Display(bruteForce(cnf))
+CreateCNF(mine, cnf)
+
+tracemalloc.start()
+startTime = time.time()
+Output = bruteForce(cnf)
+tracemalloc.stop()
+t = (time.time() - startTime)
+
+Display(Output)
+# print(Output)
+
+print()
+print(f"Running time: {t * 1000:.4f} ms")

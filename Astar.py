@@ -243,10 +243,8 @@ Output = AStar(mine)
 tracemalloc.stop()
 t = (time.time() - startTime)
 
-startTime = time.time()
-Output = AStar(mine)
-
 Display(Output) 
+# print(Output)
 print()
 print(f"Running time: {t * 1000:.4f} ms")
 
