@@ -7,9 +7,21 @@ import numpy as np
 #         ['-','-','-'],
 #         ['1','-','-']]
 
-mine = [['1','1','1'],
-        ['-','-','2'],
-        ['-','2','-']]
+# mine = [['1','1','1'],
+#         ['-','-','-'],
+#         ['-','2','-']]
+
+mine = [['-','-','-','1','-'],
+        ['-','2','1','-','-'],
+        ['3','-','-','-','2'],
+        ['-','-','-','1','-'],
+        ['-','1','1','1','1']]
+
+# mine = [['-','-','-','1','-'],
+#         ['X','2','1','-','X'],
+#         ['3','X','-','-','2'],
+#         ['-','X','-','1','X'],
+#         ['-','1','1','1','1']]
 
 # mine = [['3','-','-'],
 #         ['-','-','-'],
@@ -142,10 +154,10 @@ def bruteForce(cnf):
     
     for i in first:
         mineList = []
-        index = [i]
+        index = [[i]]
+        nextStep = []
         while(True):
-            nextStep = []
-            mineList.append(index[0])             
+            mineList.append(index[-1][0])             
             for bomb in mineList:
                 tmp = []
                 for j in tmpPos:
@@ -153,8 +165,8 @@ def bruteForce(cnf):
                         tmp.append(j)
                 tmpPos = tmp.copy()
             if(len(tmpPos)!=0):
-                nextStep.append(tmpPos[0])
-                index = nextStep[-1].copy()
+                nextStep= tmpPos[0].copy()
+                index.append(nextStep)
                             
             if(len(tmpPos) == 0):
                 # kiểm tra kết quả
@@ -163,9 +175,23 @@ def bruteForce(cnf):
 
                 tmpPos = myPos.copy()   
                 mineList.pop(-1)   
-                index.pop(0)
+                index[-1].pop(0)
+                while(len(index[-1])==0):
+                    index.pop(-1)
+                    if(len(index)==0):
+                        break
+                    index[-1].pop(0)
+                    mineList.pop(-1)
                 if(len(index) == 0):
                     break
+                    # xóa cái vị trí cuối đi
+                    # nextStep.pop(-1)
+                    # if(len(nextStep) == 0):
+                    #     break
+                    # else: 
+                    #     mineList.pop(-1)   
+                    #     index = nextStep[-1][0].pop()
+                        
     return None
 
 def NewMatrix(mine):
@@ -213,4 +239,5 @@ def Display(State):
             print(output[i][j], end=' ')
 
 CreateCNF(mine, cnf)    
+# print(bruteForce(cnf))
 Display(bruteForce(cnf))
