@@ -1,14 +1,26 @@
 from pysat.formula import CNF
-from pysat.solvers import Solver
-import numpy as np
+from pysat.solvers import Solver    
 import heapq
+import time, tracemalloc
 cnf = CNF()
 
-mine = [['-','-','-'],
-        ['2','3','2'],
-        ['-','0','-']]
-
-
+# mine = [['2','-','-'],
+#         ['-','2','-'],
+#         ['-','-','-']]
+mine = [['-','1','-','2','2','-','1','-','-'],
+        ['-','1','1','2','-','2','1','1','1'],
+        ['1','1','-','1','1','1','-','1','-'],
+        ['-','1','-','-','-','-','1','2','2'],
+        ['1','2','1','1','1','1','2','-','1'],
+        ['-','1','-','1','1','-','2','1','1'],
+        ['-','1','1','1','1','1','1','-','-'],
+        ['1','1','-','-','-','1','-','1','-'],
+        ['-','1','0','-','-','1','-','1','-']]
+# mine = [['-','-','-','1','-'],
+#         ['-','2','1','-','-'],
+#         ['3','-','-','-','2'],
+#         ['-','-','-','1','-'],
+#         ['-','1','1','1','1']]
 def combinations_positive(ValueList, k):
     if k == 0:
         return [[]]
@@ -189,11 +201,32 @@ def AStar(mine):
         successor, index = CreateSuccessors(curState)
         
         for i in range (len(successor)):
-            if successor[i] not in exploredSet:
+            if successor[i] not in exploredSet and successor[i] not in frontier:
                 heapq.heappush(frontier, (conflict(successor[i]) + cost + 1, conflict(successor[i]), cost + 1, successor[i]))
     return None
         
-        
+def Display(State):
+    output = [row[:] for row in State]
+    adjPoint = [-1, 0 , 1]
+    for i in range(len(State)):
+        for j in range(len(State[0])):
+            if State[i][j] > 0: # kiem tra o bom
+                output[i][j] = 'X'
+            elif State[i][j] < 0:
+                cnt = 0
+                for k in adjPoint:
+                    for l in adjPoint:
+                        if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
+                            if State[i + k][j + l] > 0 :
+                                cnt += 1
+                output[i][j] = cnt
+            elif State[i][j] == 0:
+                output[i][j] = '-'
+            
+    for i in range(len(output)):
+        print()
+        for j in range(len(output[0])):
+            print(output[i][j], end=' ')     
                  
 CreateCNF(mine, cnf)
 for clause in cnf.clauses:
@@ -206,3 +239,14 @@ with Solver(bootstrap_with=cnf) as solver:
 
     # 1.2 the formula is satisfiable and so has a model:
     print('and the model is:', solver.get_model())
+
+
+tracemalloc.start()
+startTime = time.time()
+Output = AStar(mine)
+tracemalloc.stop()
+t = (time.time() - startTime)
+
+Display(Output)
+print()
+print(f"Running time: {t * 1000:.4f} ms")
