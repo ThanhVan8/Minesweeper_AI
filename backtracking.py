@@ -21,6 +21,16 @@ mine = [['-','-','-','1','-'],
 #         ['1','-','1'],
 #         ['1','-','-']]
 
+# mine = [['-','1','-','2','2','-','1','-','-'],
+#         ['-','1','1','2','-','2','1','1','1'],
+#         ['1','1','-','1','1','1','-','1','-'],
+#         ['-','1','-','-','-','-','1','2','2'],
+#         ['1','2','1','1','1','1','2','-','1'],
+#         ['-','1','-','1','1','-','2','1','1'],
+#         ['-','1','1','1','1','1','1','-','-'],
+#         ['1','1','-','-','-','1','-','1','-'],
+#         ['-','1','0','-','-','1','-','1','-']]
+
 def combinations_positive(ValueList, k):
     if k == 0:
         return [[]]
@@ -117,6 +127,7 @@ def backtrackingSolver():
     for cell in range(1, numCell+1):    # from 1 to numCell
         if cell not in singleCNFs and -cell not in singleCNFs and (any(cell in clause for clause in cnf.clauses) or any(cell in clause for clause in cnf.clauses)):
             notAssigned.append(cell)
+    print(notAssigned)
 
     assigned = singleCNFs.copy()
     val = [1, -1]
