@@ -215,7 +215,8 @@ def backtrackingSolver():
         return None
 
 
-#for BF
+# for BF
+# get posiclause in CNF 
 def preHandle(cnf):
     myPos = []
     for clause in cnf:
@@ -223,65 +224,83 @@ def preHandle(cnf):
             myPos.append(clause)
     return myPos 
             
+# check conflit on matrix
 def isConflict(mineList):
     tmp = mine.copy()
     x = len(mine)
-    # gán bom vào ma trận
+    
+    # assign bombs into correspinding cells 
     for i in mineList:
-        # dòng 1
+        # for cells in line 1
         if(i<=x):
             tmp[0][i-1] = 'X'
-        else:   # các dòng còn lại
+        else:   # the other cells 
             row = int((i-1)/x)
             col = i - row*x -1
             tmp[row][col] = 'X'
             
+    # check conflict by counting the number of bomb around a positive number in matrix 
     for i in range(len(tmp)):
         for j in range(len(tmp[i])):
             if(tmp[i][j].isnumeric()):
+                # get index of neighbor list
                 neighbor_list = neighbors(tmp, (i, j))
                 count = 0
+                # count number of bombs in neighbor list to check the validation 
                 for k in neighbor_list:
                     if(k in mineList):
                         count+=1
-                        # số bom không hợp lệ
+                        # the quantity of bombs is invalid 
                         if(count > int(tmp[i][j])):
-                            return False
-    return True
+                            return True
+    return False
           
 def BruteForce(cnf):
 
+    # pre-handle for cnf to get positive clauses in it
     myPos = preHandle(cnf)
+    # a temporary list of positive clauses
     tmpPos = myPos.copy()   
     first = myPos.pop(0)
     
+    # get the first clause to make the loop (at leats 1 value in 'firt' is true - has bomb)
     for i in first:
         mineList = []
+        
+        # index will store the list of clauses that loop has visit 
         index = [[i]]
         nextStep = []
+        
         while(True):
-            mineList.append(index[-1][0])             
+            # add element from index to mineList 
+            mineList.append(index[-1][0])         
+             
+            # remove all clause that each element in mineList is included    
             for bomb in mineList:
                 tmp = []
                 for j in tmpPos:
                     if(bomb not in j):
                         tmp.append(j)
-                tmpPos = tmp.copy()
-            if(len(tmpPos)!=0):
-                nextStep= tmpPos[0].copy()
-                index.append(nextStep)
-                            
-            if(len(tmpPos) == 0):
-                # kiểm tra kết quả
-                if(isConflict(mineList) and mineList):
-                    return mineList
+                tmpPos = tmp.copy()     # update elements in tmpPos
 
+            # find the next step for mineList 
+            if(len(tmpPos)!=0):
+                nextStep= tmpPos[0].copy()      # nextStep will be the first element in tmpPos 
+                index.append(nextStep)          # add this value into index
+
+            # mineList (the quantity of bomb) is enough 
+            if(len(tmpPos) == 0):           
+                # check the conflict of mineList 
+                if(isConflict(mineList) == False and mineList):
+                    return mineList         # not have conflit
+
+                # have conflit
                 tmpPos = myPos.copy()   
-                mineList.pop(-1)   
-                index[-1].pop(0)
-                while(len(index[-1])==0):
-                    index.pop(-1)
-                    if(len(index)==0):
+                mineList.pop(-1)        # remove the last value in mineList        
+                index[-1].pop(0)        # remove the corresponding value in index
+                while(len(index[-1])==0):       # whether the last index is empty (after removing) ?
+                    index.pop(-1)               
+                    if(len(index)==0):          # if the "index" is empty, go to the next value in "first" - for loop
                         break
                     index[-1].pop(0)
                     mineList.pop(-1)
