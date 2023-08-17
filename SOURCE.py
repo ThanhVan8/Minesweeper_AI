@@ -97,7 +97,7 @@ def CreateCNF(InitMatrix, cnf):
                 
     if [] in cnf.clauses: #delete null CNF clause
         cnf.clauses.remove([])  
-    return cnf     
+    return cnf  
 
 
 #below function are used for AStar
@@ -116,7 +116,7 @@ def conflict(state):
             heuristic += 1
     return heuristic
 
-#checking if neighbors of a positions have information
+#checking if cell appears in any clause of CNF (means that cell has information)
 def checkIfHaveInfo(cell): 
     if any(cell in clause for clause in cnf.clauses) or any(cell in clause for clause in cnf.clauses):
         return True
@@ -145,7 +145,7 @@ def CreateSuccessors(state):
     successors = []
     numCell = len(mine) * len(mine[0])
     for i in range(numCell):
-        if state[i] == 0 and checkIfHaveInfo(i + 1):
+        if state[i] == 0 and checkIfHaveInfo(i + 1): #if cell is not assigned and has information
             suc1 = [tmp for tmp in state]
             suc2 = [tmp for tmp in state]
             suc1[i] = i+1 #positive
@@ -179,35 +179,34 @@ def AStar(mine):
 #check conflict to stop
 def checkConflict(assignedList):    
     for clause in cnf.clauses:
-        if checkExist(assignedList, clause) == False:
+        if checkExist(assignedList, clause) == False:   # if there is a clause that is not satisfied by the assignment
             return False
     return True
 
 #Backtracking algorithm
 def backtrackingSolver():
-    singleCNFs = singleVars(cnf)
-    numCell = len(mine) * len(mine[0])
-    notAssigned = []
+    singleCNFs = singleVars(cnf)    # get clause with only one literal
+    numCell = len(mine) * len(mine[0])  # number of cells
+    notAssigned = []    # init list of cells that are not assigned
     for cell in range(1, numCell+1):    # from 1 to numCell
         if cell not in singleCNFs and -cell not in singleCNFs and (any(cell in clause for clause in cnf.clauses) or any(cell in clause for clause in cnf.clauses)):
             notAssigned.append(cell)
-    #print(notAssigned)
 
-    assigned = singleCNFs.copy()
-    val = [1, -1]
+    assigned = singleCNFs.copy()    # init list of cells that are assigned
+    val = [1, -1]   # possible values for each cell (1: bomb, -1: no bomb)
 
-    def backtracking(assigned, idx=0):
-        if idx == len(notAssigned):
+    def backtracking(assigned, idx=0):  # idx: current index of notAssigned
+        if idx == len(notAssigned): # if all cells are assigned
             return checkConflict(assigned)
         
         for bomb in val:
             notAssigned[idx] *= bomb
             assigned.append(notAssigned[idx])
-            res = backtracking(assigned, idx + 1)
+            res = backtracking(assigned, idx + 1)   # go to next cell need to be assigned
             if res:
                 return True
             else:
-                assigned.pop(-1) # pop out the latest value
+                assigned.pop(-1) # pop out the latest assigned value
         return False
     
     if backtracking(assigned):
@@ -293,37 +292,37 @@ def BruteForce(cnf):
 
 #Handle for Write to output file
 #For Brute Force
-def BeforeOutput_1(resList):
+def BeforeOutput_1(resList): # resList: list of bombs
     State = [row[:] for row in mine]
     for i in range(len(State)):
         for j in range(len(State[0])):
             idx = i*len(mine) +j+1
             if idx in resList:
-                State[i][j] = idx
+                State[i][j] = idx # bomb
             elif not any(idx in clause for clause in cnf.clauses) and not any(-idx in clause for clause in cnf.clauses):
-                State[i][j] = 0
+                State[i][j] = 0 # does not have information
             else:
-                State[i][j] = -idx
+                State[i][j] = -idx # not bomb
 
     return State
 
 #For Backtracking
-def BeforeOutput_2(resList):
+def BeforeOutput_2(resList): # resList: list of assigned cells
     State = [row[:] for row in mine]
     for i in range(len(State)):
         for j in range(len(State[0])):
             idx = i*len(mine) +j+1
             if idx in resList:
-                State[i][j] = idx
+                State[i][j] = idx # bomb
             elif -idx in resList:
-                State[i][j] = -idx
+                State[i][j] = -idx # not bomb
             else:
-                State[i][j] = 0
+                State[i][j] = 0 # does not have information
 
     return State
 
 #For A* 
-def BeforeOutput_3(resList):
+def BeforeOutput_3(resList):  # resList: list of assigned cells
     State = [row[:] for row in mine]
     for i in range(len(State)):
         for j in range(len(State[0])):
@@ -342,12 +341,12 @@ def Display(State, n):
         for j in range(len(State[0])):
             if State[i][j] > 0: # check if a bomb
                 output[i][j] = 'X'
-            elif State[i][j] < 0: # if not
+            elif State[i][j] < 0: # if not -> count number of bombs around
                 cnt = 0
                 for k in adjPoint:
                     for l in adjPoint:
                         if 0 <= i+k < len(State) and 0 <= j+l < len(State[0]):
-                            if State[i + k][j + l] > 0 :
+                            if State[i + k][j + l] > 0 : # if neighbor is bomb
                                 cnt += 1
                 output[i][j] = cnt
             elif State[i][j] == 0: # does not have in4
@@ -370,6 +369,7 @@ if __name__ == '__main__':
     print("1. Bruteforce")
     print("2. Backtracking")
     print("3. A*")
+    print("4. Use pysat library")
     choice = int(input("Your choice: "))
     # Create CNF
     CreateCNF(mine, cnf)
@@ -415,3 +415,16 @@ if __name__ == '__main__':
         Display(BeforeOutput_3(Output), n)
         #print time
         print(f"Running time: {t * 1000:.4f} ms")
+
+    if choice == 4:
+        with Solver(bootstrap_with=cnf) as solver:
+            tracemalloc.start()
+            startTime = time.time()
+            print('formula is', f'{"s" if solver.solve() else "uns"}atisfiable')
+            print('and the model is:', solver.get_model())
+            t = (time.time() - startTime)
+
+            if solver.get_model():
+                Display(BeforeOutput_2(solver.get_model()), n)
+            #print time
+            print(f"Running time: {t * 1000:.4f} ms")
